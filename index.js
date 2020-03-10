@@ -6,9 +6,11 @@
 // https://www.youtube.com/watch?v=X_qg0Ut9nU8
 
 // Discord.js is required for the bot to work, pokedex-promise-v2 is a NodeJS package that is a wrapper for PokeAPI v2,
-// which is used for the pokemon command.
+// which is used for the pokemon command, and select-random-file is a NodeJS package to take a random image from a directory,
+// used just for the !titan command for now.
 const Discord = require('discord.js');
 const Pokedex = require('pokedex-promise-v2');
+const randomFile = require('select-random-file');
 
 // Creating our bot and Pokedex variables
 const bot = new Discord.Client();
@@ -22,8 +24,8 @@ const { token } = require('./config.json');
 // author is me
 // version is the current version of the bot, which can be changed
 const PREFIX = '!';
-const author = "Lamb#3965"
-let version = "1.0.0";
+const author = "Lamb#0013";
+let version = "1.0.2";
 
 // When we run the bot, it should output "This bot is online!" in the terminal.
 // This will also set its activity in the member list to be "Playing (whatever)".
@@ -74,6 +76,7 @@ bot.on("message", message => {
 				let coinflip_example = "Example: `!coinflip`\n> Heads! (or Tails!)";
 				let pokemon_example = "Example: `!pokemon pikachu`\n> (some information about Pikachu)";
 				let info_example = "Example: `!info`\n> (some information about PearBot)";
+				let titan_example = "Example: `!titan`\n> (an image of a random intelligent titan)";
 				const embed = new Discord.RichEmbed()
 					.setTitle("Help")
 					.addField("help", "Use `!help` to see this help message.")
@@ -82,6 +85,8 @@ bot.on("message", message => {
 					.addField("coinflip", "Use `!coinflip` to flip a coin.")
 					.addField("pokemon", "Type `!pokemon` followed by a Pok\xE9mon's \
 						name to get some information about it.\n" + pokemon_example)
+					.addField("titan", "Type `!titan` to see an image of a random intelligent titan \
+						from the anime \"Attack on Titan.\"\n" + titan_example)
 					.addField("info", "Type `!info` to see some general information about PearBot.")
 					.addField("Easter Eggs", "There are some easter egg commands as well,\
 						but I'm not allowed to tell you them here. Go bother the author about them. :)")
@@ -122,8 +127,7 @@ bot.on("message", message => {
 			// If the !pokemon command is entered. This part uses the pokedex-promise-v2 package.
 			case "pokemon":
 				if (args.length != 2) {
-					message.reply("Error! Invalid number of arguments. Please type a \
-						single Pok\xE9mon name after 'pokemon.'");
+					message.reply("Error! Invalid number of arguments. Please type a single Pok\xE9mon name after 'pokemon.'");
 					break;
 				} else {
 					// This stuff gets a little bit complicated, but basically we take in the Pokemon's name that the user
@@ -136,9 +140,23 @@ bot.on("message", message => {
 					pokemon = pokemon.toLowerCase();
 					let pokedex_number;
 					let sprite_url;
+					let type;
 					P.getPokemonByName(pokemon).then(function(response) {
 						pokedex_number = response.id;
 						sprite_url = response.sprites.front_default;
+						type = response.types;
+						if (type.length === 2) {
+							let first_type = type[0].type["name"];
+							let second_type = type[1].type["name"];
+
+							first_type = first_type.charAt().toUpperCase() + first_type.slice(1);
+							second_type = second_type.charAt().toUpperCase() + second_type.slice(1);
+
+							type = `${first_type}/${second_type}`;
+						} else {
+							type = type[0].type["name"];
+							type = type.charAt().toUpperCase() + type.slice(1);
+						}
 						// To get the Pokedex entry of the Pokemon, we use P.resource(response.species.url). This gives
 						// a list of all the Pokedex entries of the Pokemon in all of the games it has been in (I think) in
 						// many languages. We only want the latest Pokedex entry in English, so that's what we're doing here.
@@ -198,6 +216,7 @@ bot.on("message", message => {
 									const pokemon_embed = new Discord.RichEmbed()
 										.setTitle(name + " Information")
 										.addField("Pok\xE9mon Name", name)
+										.addField("Type", type)
 										.addField("Pok\xE9dex Number", pokedex_number)
 										.addField("Pok\xE9dex Entry", flavor_text)
 										.addField("Entry From", game_version)
@@ -228,12 +247,48 @@ bot.on("message", message => {
 					.setColor(0xF1C40F);
 				message.channel.send(info_embed).catch(console.error);
 				break;
-			// These two are the two easter egg commands currently. Right now they are just fun jokes for my friends.
+			// An experimental command that gives a random picture of an intelligent titan from the anime "Attack on Titan".
+			// This command uses the "select-random-file" package to take a random image from the "titans" directory.
+			// I'm not sure if there's a more efficient way of doing the naming below.
+			case "titan":
+				const dir = "./images/titans";
+				randomFile(dir, (err, file) => {
+					let attachment = new Discord.Attachment(`./images/titans/${file}`);
+					let name;
+					if (file === "annie_titan.jpg") {
+						name = "Annie's Titan";
+					} else if (file === "armored_titan.jpeg") {
+						name = "Armored Titan";
+					} else if (file === "beast_titan.jpg") {
+						name = "Beast Titan";
+					} else if (file === "colossal_titan.png") {
+						name = "Colossal Titan";
+					} else if (file === "eren_titan.jpg") {
+						name = "Eren's Titan";
+					} else if (file === "ymir_titan.jpg") {
+						name = "Ymir's Titan";
+					}
+					message.channel.send(name + "!", attachment);
+				});
+				break;
+			case "zelda":
+				message.channel.send("Gosh dang it Link I'm working on this, relax");
+				break;
+			// These are the two easter egg commands currently. Right now they are just fun jokes for my friends.
 			case "court":
 				message.channel.send("Hello *Kourt*ney! :joy:");
 				break;
 			case "hasan":
 				message.channel.send("Hasan says: \"Kevin sucks!\"");
+				break;
+			case "kevin":
+				message.channel.send("Kevin says: \"Hasan sucks!\"");
+				break;
+			case "formuoli":
+				message.channel.send("Ravioli, ravioli, give me the WhatsApp groupioli! :hamburger:");
+				break;
+			case "fortnite":
+				message.channel.send("TONIGHT'S THE NIGHT FOR FORTNITE!");
 				break;
 			default:
 				message.reply("Error! Please enter a valid command.");
